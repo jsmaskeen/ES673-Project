@@ -1,0 +1,16 @@
+# Exploratory (chosen after the main result): the same models as the main analysis, but every
+# V-JEPA band is pooled per frame quadrant (2x2) instead of over the whole frame, so the
+# current-input control keeps spatial layout. 2 s horizon. Results go to results_spatial/.
+#   python3 src/04b_extract_extra.py          (GPU, once; shared with the horizon experiment)
+#   python3 src/08b_prepare_extra.py --exp spatial
+#   python3 src/09_fit_encoding.py --exp spatial ; python3 src/11_stats.py --exp spatial
+#   python3 src/12_figures.py --exp spatial ; python3 src/13_extra_figures.py --exp spatial
+pca_components_quadrant: 256    # quadrant bands are 4x (CUR_q 8x) wider than the pooled ones
+models:
+  full:       [NUIS, CUR_q, LONG, ORAC_q, FORE_q]
+  full_noF:   [NUIS, CUR_q, LONG, ORAC_q]
+  full_rand:  [NUIS, CUR_q, LONG, ORAC_q, RAND_q]
+  surp:       [NUIS, CUR_q, LONG, CHG_q, SURP_q]
+  surp_noS:   [NUIS, CUR_q, LONG, CHG_q]
+  surp_rand:  [NUIS, CUR_q, LONG, CHG_q, SURPR_q]
+  base:       [NUIS, CUR_q]

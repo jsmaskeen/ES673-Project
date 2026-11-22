@@ -1,0 +1,11 @@
+# Planned robustness analysis (proposal): banded ridge, i.e. every feature band gets its own
+# penalty. Same features and models as the main analysis; results go to results_banded/.
+#   python3 src/09_fit_encoding.py --exp banded   then   11_stats.py --exp banded
+reuse_main_features: true
+encoding:
+  solver: banded_fast
+  banded:
+    n_draws: 16                 # random band weightings of the non-tested bands (Dirichlet), first = equal
+    concentrations: [0.1, 1.0]  # alternate, like himalaya's random search
+    gammas: [0, 0.5, 1, 2]      # tested band (FORE/RAND/SURP/SURPR) weight, crossed with every draw
+    seed: 0

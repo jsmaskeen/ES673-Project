@@ -1,0 +1,9 @@
+# Planned analysis (proposal): forecast-horizon curves. For horizons 0.5, 1, 2, 3, 4 s the same
+# 3+3 model design as the main analysis, with forecast / random predictor / oracle / surprise
+# of the single 0.5-s slot that ends at that horizon. Models and contrasts are generated in
+# common.horizon_models_contrasts (names *_h05 ... *_h40).
+#   python3 src/04b_extract_extra.py          (GPU, once; shared with the spatial experiment)
+#   python3 src/08b_prepare_extra.py --exp horizon
+#   python3 src/09_fit_encoding.py --exp horizon ; python3 src/11_stats.py --exp horizon
+#   python3 src/13_extra_figures.py --exp horizon
+generate: horizon

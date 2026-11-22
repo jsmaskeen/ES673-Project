@@ -1,0 +1,68 @@
+# Prediction or Surprise? -- all pipeline parameters live here.
+# Every script takes --config config.yaml (default). Paths may use ~.
+
+paths:
+  # Put both on the big drive (the home disk is too small for ~25 GB of video).
+  data_root: /media/nishuz/PortableSSD/NeuroAI/data/algonauts_2025.competitors   # the datalad dataset
+  work: /media/nishuz/PortableSSD/NeuroAI/work                                   # everything this pipeline writes
+
+subjects: [sub-01, sub-02, sub-03, sub-05]
+
+# Seasons used for training (all five are downloaded and extracted).
+train_seasons: [1, 2, 3, 4, 5]
+test_season: 6
+
+tr: 1.49            # seconds, fixed by the dataset
+
+video:
+  fps: 4            # V-JEPA 2 pretraining frame rate (configs/train/vitl16: fps: 4)
+  size: 256         # model crop size
+  mode: letterbox   # letterbox = keep full 16:9 frame, pad to square; crop = HF-processor-style 292 resize + 256 centre crop
+
+model:
+  name: facebook/vjepa2-vitl-fpc64-256
+  dtype: float16    # switch to bfloat16 if extraction reports non-finite values
+  layer_mid: 8      # hidden_states index: output of transformer block 8 (of 24)
+  tiny_random: false  # tests only: tiny randomly initialised V-JEPA 2, no download
+
+extract:
+  ctx_frames: 8         # 2 s of past context at 4 fps
+  fut_frames: 8         # 2 s forecast horizon
+  long_frames: 24       # 6 s integration window (use 16 if the benchmark says GPU time is short)
+  batch_trs: 16         # lower to 8 on CUDA out-of-memory
+  seed_rand_predictor: 1234
+
+nuisance:
+  scene_threshold: 0.3  # ffmpeg scene-change score threshold for cuts
+
+encoding:
+  forecast_source: vjepa  # set to "ridge" only if 05_go_nogo.py says NO-GO
+  solver: ridge          # ridge (one penalty per parcel, fast) | banded (himalaya, one weight per band, slow)
+  pca_components: 128
+  delays: [1, 2, 3, 4, 5, 6]   # TRs; features at TR k already summarise frames before t_k
+  n_folds: 5                   # GroupKFold by episode inside the training seasons
+  alphas_log10: [-2, 8, 21]    # np.logspace(start, stop, num)
+  # ridge solver: the tested band of each model gets its own weight gamma per parcel (CV-chosen);
+  # gamma = 0 drops it, so e.g. 'full' nests 'full_noF'. Equivalent penalty on that band = alpha/gamma^2.
+  tested_bands: [FORE, RAND, SURP, SURPR]
+  gammas: [0, 0.25, 0.5, 1, 2, 4]
+  n_iter: 30                   # random-search iterations over band weightings
+  n_targets_batch: 250
+  backend: torch_cuda          # torch_cuda = use the GPU | numpy = CPU
+  save_predictions: true       # float16 test predictions (needed for the time-course figure)
+
+# Encoding models (band lists). Contrasts in 10_stats.py are defined on these names.
+models:
+  full:       [NUIS, CUR, LONG, ORAC, FORE]
+  full_noF:   [NUIS, CUR, LONG, ORAC]
+  full_rand:  [NUIS, CUR, LONG, ORAC, RAND]
+  surp:       [NUIS, CUR, LONG, CHG, SURP]
+  surp_noS:   [NUIS, CUR, LONG, CHG]
+  surp_rand:  [NUIS, CUR, LONG, CHG, SURPR]
+  base:       [NUIS, CUR]     # sanity model (Gate 2)
+
+stats:
+  n_boot: 10000
+  alpha: 0.05
+  seed: 0
+  min_subjects: 3      # group effect = significant in >= 3 of 4 subjects
